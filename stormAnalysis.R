@@ -25,6 +25,7 @@ health <- select(trimStorm, EVTYPE, FATALITIES, INJURIES)
 economic <- select(trimStorm, EVTYPE, PROPDMG, PROPDMGEXP, CROPDMG, CROPDMGEXP) 
 head(economic)
 
+## Economic Analysis
 # Convert propdmg and cropdmg to same units using the propdmgexp and cropdmgexp; K = 1000, M=1000000, B = 1000000000
 
 replaced <- c("H",  "K",  "M",     "B",        "-", "+", "0", "1", "2", '3', '4', '5', '6', '7', '8', "", "?" )
@@ -58,3 +59,26 @@ damage <- head(arrange(damages, desc(x)),10,)
 
 qplot(EVTYPE, x, data = damage, geom = "bar", stat = "identity", xlab = "", ylab = "Average Cost") +
 theme(text = element_text(size= 15), axis.text.x = element_text(angle = 90, vjust = 0, hjust=1))
+
+
+## Health Analysis
+health <- select(trimStorm, EVTYPE, FATALITIES, INJURIES)
+str(health)
+summary(health)
+health$FATALITIES
+
+casual <- melt(health, id.vars= "EVTYPE" )
+Casual <- melt(Casualties, id = "EVTYPE")
+
+PopulationHealth <- aggregate(casual$value, list(EVTYPE = casual$EVTYPE, Casualty = casual$variable), mean)
+PopulationHealth <- arrange(PopulationHealth,  desc(x))
+pophealth <- head(PopulationHealth,20)
+
+
+
+
+qplot(EVTYPE, x, data = pophealth, geom = "bar", stat = "identity", xlab = "", ylab = "Average")+
+    facet_grid(.~Casualty)+
+    theme(text = element_text(size = 15), axis.text.x = element_text(angle = 90, vjust = 0, hjust = 1))
+
+
