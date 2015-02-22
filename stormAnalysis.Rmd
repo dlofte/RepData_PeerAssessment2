@@ -4,9 +4,14 @@ author: "Dave Lofte"
 date: "Saturday, February 21, 2015"
 output: html_document
 ---
+## Synopsis
+In this analysis we use data from the National Weather Service to try to determine which
+weather events are the most destructive economically and harmful to human health.
 
+#Processing the Data
 
 ##Reading in the data
+We read in the data, and take a quick look using the str() function.  We notice that there are a few variables that are not necessary for our analysis.
 ```{r}
 #setwd("~/R/reproResearch/RepData_PeerAssessment2")
 
@@ -20,8 +25,6 @@ if (!"storm.csv.bz2" %in%dir()){
 stormData <- read.csv(bzfile("storm.csv.bz2"))
 str(stormData)
 ```
-
-#Processing
 
 
 Exploring over what time period most of the observations occur.
@@ -44,7 +47,7 @@ economic <- select(trimStorm, EVTYPE, PROPDMG, PROPDMGEXP, CROPDMG, CROPDMGEXP)
 ```
 
 ## Economic processing
-Convert propdmg and cropdmg to same units using the propdmgexp and cropdmgexp; K = 1000, M=1000000, B = 1000000000
+Convert propdmg and cropdmg to same units using the propdmgexp and cropdmgexp variables.  I created two conversion vectors to facilitate this process. The conversion values were found investigating the storm data manual and investing some of the original data, the most intersting and useful fact discovered was that the numeric values in the 'exp' variables were overflows from the propdmg and cropdmg variables, thus they represent an extra decimal place for the original data which is why they are converted to "10".
 
 ```{r}
 replaced <- c("H",  "K",  "M",     "B",        "-", "+", "0", "1", "2", '3', '4', '5', '6', '7', '8', "", "?" )
@@ -52,7 +55,11 @@ replacer <- c( 100, 1000, 1000000, 1000000000, 0,   1,    10,  10,  10,  10,  10
 
 economic$PROPDMGEXP <- as.character(toupper(economic$PROPDMGEXP))
 economic$CROPDMGEXP <- as.character(toupper(economic$CROPDMGEXP))
+```
+We use a loop subsetting our data using the replaced coversion vector and replacing with the associated value from the replacer vector.  Lastly we mutate PROPDMG and CROPDMG multiplying by the CROPDMGEXP and PROPDMGEXP.
 
+All this work allows to have comparable values in the PROPDMG and CROPDMG variables.
+```{r}
 
 len <- length(replaced)
 for (idx in 1:len){
@@ -66,17 +73,18 @@ economic <- transform(economic, PROPDMGEXP =as.numeric(PROPDMGEXP), CROPDMGEXP =
 economic <- mutate(economic, PROPDMG = PROPDMG*PROPDMGEXP, CROPDMGEXP = CROPDMG*CROPDMGEXP)
 ```
 
-
+We then summarise the data averaging the cost of property damage and crop damage by  grouping the data by the variable EVTYPE whose values are different types of weather events.
 ```{r}
 econo <- melt(economic,id.vars= "EVTYPE",measure.vars = c("PROPDMG","CROPDMG"),variable.name= "DamageType", value.name = "Cost")
 
 #damages<- aggregate(econo$Cost, list(EVTYPE = econo$EVTYPE, DamageType = econo$DamageType), mean)
 
-damage <- head(arrange(aggregate(econo$Cost, list(EVTYPE = econo$EVTYPE, DamageType = econo$DamageType), mean), desc(x)),10,)
+damage <- head(arrange(aggregate(econo$Cost, list(EVTYPE = econo$EVTYPE, DamageType = econo$DamageType), mean), desc(x)),10)
 
 ```
 
 ## health Processing
+We then summarise the data averaging the number of fatalities and injuries grouping the data by the variable EVTYPE whose values are different types of weather events.
 ```{r}
 
 casual <- melt(health, id.vars= "EVTYPE" )
