@@ -4,16 +4,16 @@ author: "Dave Lofte"
 date: "Saturday, February 21, 2015"
 output: html_document
 ---
-## Synopsis
+### Synopsis
 In this analysis we use data from the National Weather Service to try to determine which
 weather events are the most destructive economically and harmful to human health.
 
-#Processing the Data
+##Processing the Data
 
-##Reading in the data
+###Reading in the data
 We read in the data, and take a quick look using the str() function.  We notice that there are a few variables that are not necessary for our analysis.
 ```{r}
-#setwd("~/R/reproResearch/RepData_PeerAssessment2")
+setwd("~/R/reproResearch/RepData_PeerAssessment2")
 
 library(dplyr)
 library(reshape2)
@@ -46,7 +46,7 @@ health <- select(trimStorm, EVTYPE, FATALITIES, INJURIES)
 economic <- select(trimStorm, EVTYPE, PROPDMG, PROPDMGEXP, CROPDMG, CROPDMGEXP) 
 ```
 
-## Economic processing
+### Economic processing
 Convert propdmg and cropdmg to same units using the propdmgexp and cropdmgexp variables.  I created two conversion vectors to facilitate this process. The conversion values were found investigating the storm data manual and investing some of the original data, the most intersting and useful fact discovered was that the numeric values in the 'exp' variables were overflows from the propdmg and cropdmg variables, thus they represent an extra decimal place for the original data which is why they are converted to "10".
 
 ```{r}
@@ -71,6 +71,7 @@ for (idx in 1:len){
 }
 economic <- transform(economic, PROPDMGEXP =as.numeric(PROPDMGEXP), CROPDMGEXP = as.numeric(CROPDMGEXP))
 economic <- mutate(economic, PROPDMG = PROPDMG*PROPDMGEXP, CROPDMGEXP = CROPDMG*CROPDMGEXP)
+
 ```
 
 We then summarise the data averaging the cost of property damage and crop damage by  grouping the data by the variable EVTYPE whose values are different types of weather events.
@@ -83,25 +84,30 @@ damage <- head(arrange(aggregate(econo$Cost, list(EVTYPE = econo$EVTYPE, DamageT
 
 ```
 
-## health Processing
+### Health Processing
 We then summarise the data averaging the number of fatalities and injuries grouping the data by the variable EVTYPE whose values are different types of weather events.
 ```{r}
 
 casual <- melt(health, id.vars= "EVTYPE" )
 
 PopulationHealth <- arrange(aggregate(casual$value, list(EVTYPE = casual$EVTYPE, Casualty = casual$variable), mean),  desc(x))
+    
 pophealth <- head(PopulationHealth,20)
 ```
 
-#Results
+##Results
+The chart below shows the average amount of economic dammage caused by the top 10 damaging weather events. It turns out that the top 10 damaging weather events all damaged property.  We can see that the most destructive weather events are Tornados, Tropical wind storm, and Hail events followed by Heavy Rain and sever weather events.  These two category of weather events caused the lions share of the damage.
 
 ```{r}
 qplot(EVTYPE, x, data = damage, geom = "bar", stat = "identity", xlab = "", ylab = "Average Cost") +
+   facet_grid(.~DamageType) +
 theme(text = element_text(size= 15), axis.text.x = element_text(angle = 90, vjust = 0, hjust=1))
 ```
 
+
+The graph below shows the average number of casualties(fatalities/injuries) for the top 10 most harmful weather events.  We can see that overall there are many more injuries form the result of weather events than deaths. The weather event most likely to cause non fatal injuries are surprisingly heatwaves.  The weather event that results in the most events are Tornadoes, Tropical wind storms, and Hail events.  
 ```{r}
-qplot(EVTYPE, x, data = pophealth, geom = "bar", stat = "identity", xlab = "", ylab = "Average")+
+qplot(EVTYPE, x, data = pophealth, geom = "bar", stat = "identity", xlab = "", ylab = "Average Casualties")+
     facet_grid(.~Casualty)+
     theme(text = element_text(size = 15), axis.text.x = element_text(angle = 90, vjust = 0, hjust = 1))
 ```
